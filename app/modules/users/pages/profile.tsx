@@ -1,13 +1,16 @@
-import { requireAuthMiddleware } from "~/server/auth-middleware.server";
+import { defineApi } from "react-router-define-api";
 import { userContext } from "~/server/auth-context.server";
+import { requireAuthMiddleware } from "~/server/auth-middleware.server";
 import type { Route } from "./+types/profile";
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware];
 
-export function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  return { user: user! };
-}
+export const { loader } = defineApi()
+  .get(({ context }) => {
+    const user = context.get(userContext);
+    return { user: user! };
+  })
+  .build();
 
 export default function ProfilePage({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;

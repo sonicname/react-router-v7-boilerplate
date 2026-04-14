@@ -1,14 +1,17 @@
 import { Form, Link, Outlet } from "react-router";
-import { loadUserMiddleware } from "~/server/auth-middleware.server";
+import { defineApi } from "react-router-define-api";
 import { userContext } from "~/server/auth-context.server";
+import { loadUserMiddleware } from "~/server/auth-middleware.server";
 import type { Route } from "./+types/__root";
 
 export const middleware: Route.MiddlewareFunction[] = [loadUserMiddleware];
 
-export function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  return { user };
-}
+export const { loader } = defineApi()
+  .get(({ context }) => {
+    const user = context.get(userContext);
+    return { user };
+  })
+  .build();
 
 export default function RootLayout({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;

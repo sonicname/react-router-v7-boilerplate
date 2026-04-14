@@ -1,16 +1,11 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
-import { verifyPassword } from "~/server/auth.server";
-import { userContext } from "~/server/auth-context.server";
+import { defineApi } from "react-router-define-api";
 import { findUserByEmail } from "~/modules/auth/repository/auth-repository";
-import { createUserSession } from "~/server/session.server";
 import { loginSchema } from "~/modules/auth/validation/auth-schemas";
+import { userContext } from "~/server/auth-context.server";
+import { verifyPassword } from "~/server/auth.server";
+import { createUserSession } from "~/server/session.server";
 import type { Route } from "./+types/login";
-
-export function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  if (user) throw redirect("/");
-  return null;
-}
 
 type ActionErrors = {
   _form?: string[];
@@ -18,34 +13,47 @@ type ActionErrors = {
   password?: string[];
 };
 
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const rawData = Object.fromEntries(formData);
+export const { loader, action } = defineApi()
+  .get(({ context }) => {
+    const user = context.get(userContext);
+    if (user) throw redirect("/");
+    return null;
+  })
+  .post(async ({ request }) => {
+    const formData = await request.formData();
+    const rawData = Object.fromEntries(formData);
 
-  const result = loginSchema.safeParse(rawData);
-  if (!result.success) {
-    const fieldErrors = result.error.flatten().fieldErrors;
-    const errors: ActionErrors = {
-      email: fieldErrors.email,
-      password: fieldErrors.password,
-    };
-    return { errors, values: rawData };
-  }
+    const result = loginSchema.safeParse(rawData);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      const errors: ActionErrors = {
+        email: fieldErrors.email,
+        password: fieldErrors.password,
+      };
+      return { errors, values: rawData };
+    }
 
-  const { email, password } = result.data;
+    const { email, password } = result.data;
 
-  const user = await findUserByEmail(email);
-  if (!user) {
-    return { errors: { _form: ["Invalid email or password"] } as ActionErrors, values: rawData };
-  }
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return {
+        errors: { _form: ["Invalid email or password"] } as ActionErrors,
+        values: rawData,
+      };
+    }
 
-  const isValid = await verifyPassword(password, user.passwordHash);
-  if (!isValid) {
-    return { errors: { _form: ["Invalid email or password"] } as ActionErrors, values: rawData };
-  }
+    const isValid = await verifyPassword(password, user.passwordHash);
+    if (!isValid) {
+      return {
+        errors: { _form: ["Invalid email or password"] } as ActionErrors,
+        values: rawData,
+      };
+    }
 
-  return createUserSession(user.id, "/");
-}
+    return createUserSession(user.id, "/");
+  })
+  .build();
 
 export default function LoginPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();

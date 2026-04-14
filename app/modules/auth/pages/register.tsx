@@ -1,40 +1,42 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
-import { hashPassword } from "~/server/auth.server";
-import { userContext } from "~/server/auth-context.server";
+import { defineApi } from "react-router-define-api";
 import { createUser, findUserByEmail } from "~/modules/auth/repository/auth-repository";
 import { registerSchema } from "~/modules/auth/validation/auth-schemas";
+import { userContext } from "~/server/auth-context.server";
+import { hashPassword } from "~/server/auth.server";
 import type { Route } from "./+types/register";
 
-export function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  if (user) throw redirect("/");
-  return null;
-}
+export const { loader, action } = defineApi()
+  .get(({ context }) => {
+    const user = context.get(userContext);
+    if (user) throw redirect("/");
+    return null;
+  })
+  .post(async ({ request }) => {
+    const formData = await request.formData();
+    const rawData = Object.fromEntries(formData);
 
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const rawData = Object.fromEntries(formData);
+    const result = registerSchema.safeParse(rawData);
+    if (!result.success) {
+      return { errors: result.error.flatten().fieldErrors, values: rawData };
+    }
 
-  const result = registerSchema.safeParse(rawData);
-  if (!result.success) {
-    return { errors: result.error.flatten().fieldErrors, values: rawData };
-  }
+    const { name, email, password } = result.data;
 
-  const { name, email, password } = result.data;
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      return {
+        errors: { email: ["An account with this email already exists"] },
+        values: rawData,
+      };
+    }
 
-  const existing = await findUserByEmail(email);
-  if (existing) {
-    return {
-      errors: { email: ["An account with this email already exists"] },
-      values: rawData,
-    };
-  }
+    const passwordHash = await hashPassword(password);
+    await createUser({ name, email, passwordHash });
 
-  const passwordHash = await hashPassword(password);
-  await createUser({ name, email, passwordHash });
-
-  return redirect("/auth/login");
-}
+    return redirect("/auth/login");
+  })
+  .build();
 
 export default function RegisterPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
