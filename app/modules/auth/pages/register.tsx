@@ -6,7 +6,7 @@ import { userContext } from "~/server/auth-context.server";
 import { hashPassword } from "~/server/auth.server";
 import type { Route } from "./+types/register";
 
-export const { loader, action } = defineApi()
+const api = defineApi()
   .get(({ context }) => {
     const user = context.get(userContext);
     if (user) throw redirect("/");
@@ -37,6 +37,9 @@ export const { loader, action } = defineApi()
     return redirect("/auth/login");
   })
   .build();
+
+export const loader = api.loader;
+export const action = api.action;
 
 export default function RegisterPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();

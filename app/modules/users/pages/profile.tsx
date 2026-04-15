@@ -5,12 +5,14 @@ import type { Route } from "./+types/profile";
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware];
 
-export const { loader } = defineApi()
+const api = defineApi()
   .get(({ context }) => {
     const user = context.get(userContext);
     return { user: user! };
   })
   .build();
+
+export const loader = api.loader;
 
 export default function ProfilePage({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;

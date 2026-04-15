@@ -13,7 +13,7 @@ type ActionErrors = {
   password?: string[];
 };
 
-export const { loader, action } = defineApi()
+const api = defineApi()
   .get(({ context }) => {
     const user = context.get(userContext);
     if (user) throw redirect("/");
@@ -54,6 +54,9 @@ export const { loader, action } = defineApi()
     return createUserSession(user.id, "/");
   })
   .build();
+
+export const loader = api.loader;
+export const action = api.action;
 
 export default function LoginPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
