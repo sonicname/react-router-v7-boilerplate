@@ -1,5 +1,15 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import { defineApi } from "react-router-define-api";
+import { Button } from "~/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { AuthFormField } from "~/modules/auth/components/auth-form-field";
 import { createUser, findUserByEmail } from "~/modules/auth/repository/auth-repository";
 import { registerSchema } from "~/modules/auth/validation/auth-schemas";
 import { userContext } from "~/server/auth-context.server";
@@ -44,78 +54,65 @@ export const action = api.action;
 export default function RegisterPage({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const errors = actionData?.errors;
+  const values = actionData?.values;
 
   return (
     <div className="mx-auto mt-16 max-w-md">
-      <h1 className="mb-6 text-2xl font-bold">Register</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Create an account</CardTitle>
+          <CardDescription>Enter your details to get started.</CardDescription>
+        </CardHeader>
 
-      <Form method="post" className="space-y-4">
-        <div>
-          <label htmlFor="name" className="mb-1 block text-sm font-medium">
-            Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            defaultValue={actionData?.values?.name as string}
-            className="w-full rounded-md border px-3 py-2"
-          />
-          {actionData?.errors?.name && (
-            <p className="mt-1 text-sm text-red-600">{actionData.errors.name[0]}</p>
-          )}
-        </div>
+        <Form method="post">
+          <CardContent className="space-y-4">
+            <AuthFormField
+              id="name"
+              name="name"
+              label="Name"
+              required
+              autoComplete="name"
+              defaultValue={values?.name as string}
+              errors={errors?.name}
+            />
 
-        <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            defaultValue={actionData?.values?.email as string}
-            className="w-full rounded-md border px-3 py-2"
-          />
-          {actionData?.errors?.email && (
-            <p className="mt-1 text-sm text-red-600">{actionData.errors.email[0]}</p>
-          )}
-        </div>
+            <AuthFormField
+              id="email"
+              name="email"
+              label="Email"
+              type="email"
+              required
+              autoComplete="email"
+              defaultValue={values?.email as string}
+              errors={errors?.email}
+            />
 
-        <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            className="w-full rounded-md border px-3 py-2"
-          />
-          {actionData?.errors?.password && (
-            <p className="mt-1 text-sm text-red-600">{actionData.errors.password[0]}</p>
-          )}
-        </div>
+            <AuthFormField
+              id="password"
+              name="password"
+              label="Password"
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              errors={errors?.password}
+            />
+          </CardContent>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          {isSubmitting ? "Creating account..." : "Register"}
-        </button>
-      </Form>
-
-      <p className="mt-4 text-center text-sm">
-        Already have an account?{" "}
-        <Link to="/auth/login" className="text-blue-600 underline">
-          Login
-        </Link>
-      </p>
+          <CardFooter className="flex flex-col gap-3">
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Creating account..." : "Register"}
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link to="/auth/login" className="font-medium text-foreground underline">
+                Login
+              </Link>
+            </p>
+          </CardFooter>
+        </Form>
+      </Card>
     </div>
   );
 }
